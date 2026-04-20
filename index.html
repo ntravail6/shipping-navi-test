@@ -32,6 +32,9 @@
         .detail-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
         .formula { font-size: 0.65rem; color: #999; display: block; margin-top: 1px; }
         .approx-note { font-size: 0.65rem; color: #f44336; margin-top: 2px; }
+        .size-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        h1 { font-size: 1.2rem; text-align: center; color: var(--main-pink); margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -62,131 +65,20 @@
                 const ic = Number(itemCost) || 0;
                 const pc = Number(packingCost) || 0;
 
-                // 1. 手数料計算
                 let fee = 0, feeFormula = "";
                 if (site === 'BASE') {
                     fee = (p * 0.066) + 40;
                     feeFormula = "販売価格 × 6.6% + 40円";
+                } else if (site === 'ラクマ') {
+                    fee = p * 0.10; // 実際は変動しますが簡易的に10%
+                    feeFormula = "販売価格 × 10%";
                 } else {
                     fee = p * 0.10;
                     feeFormula = "販売価格 × 10%";
                 }
                 
-                // 2. 配送データ
                 const methods = [
                     { name: "定形外(50g)", cost: 120, anon: false, trace: false, conv: false, info: "❌匿名不可 / ❌追跡なし / 切手発送OK", isApprox: false, size: w<=50 && dt<=3 && dw<=34 && dh<=25 },
                     { name: "定形外(100g)", cost: 140, anon: false, trace: false, conv: false, info: "❌匿名不可 / ❌追跡なし / 切手発送OK", isApprox: false, size: w<=100 && dt<=3 && dw<=34 && dh<=25 },
                     { name: "クリックポスト", cost: 185, anon: false, trace: true, conv: false, info: "❌匿名不可 / ✅追跡あり / 要ラベル印刷", isApprox: false, size: dt<=3 && dw<=34 && dh<=25 },
-                    { name: "らくらくメルカリ便(ネコポス)", cost: 210, anon: true, trace: true, conv: true, info: "✅匿名配送 / ✅専用資材不要 / セブン,ファミマOK", isApprox: false, size: dt<=3 && dw<=31 && dh<=22.6, platform: ['メルカリ', 'メルカリショップス'] },
-                    { name: "ゆうゆうメルカリ便(ゆうパケット)", cost: 230, anon: true, trace: true, conv: true, info: "✅匿名配送 / ✅専用資材不要 / ローソン,郵便局OK", isApprox: false, size: dt<=3 && dw+dh+dt<=60, platform: ['メルカリ', 'メルカリショップス'] },
-                    { name: "かんたんラクマパック(ネコポス)", cost: 200, anon: true, trace: true, conv: true, info: "✅匿名配送 / ✅専用資材不要", isApprox: false, size: dt<=3, platform: ['ラクマ'] },
-                    { name: "かんたん発送(BASE)", cost: 260, anon: true, trace: true, conv: true, info: "✅匿名配送(ヤマト連携) / ✅専用資材不要", isApprox: false, size: dt<=3, platform: ['BASE'] },
-                    { name: "宅急便 60サイズ(概算)", cost: 750, anon: true, trace: true, conv: true, info: "✅匿名可(設定による) / ✅追跡あり", isApprox: true, size: true }
-                ];
-
-                // フィルタリング
-                let available = methods.filter(m => m.size && (!m.platform || m.platform.includes(site)));
-                if (priorities.includes('anon')) available = available.filter(m => m.anon);
-                if (priorities.includes('trace')) available = available.filter(m => m.trace);
-                if (priorities.includes('conv')) available = available.filter(m => m.conv);
-
-                const selected = available.length > 0 ? available.sort((a,b) => a.cost - b.cost)[0] : methods.sort((a,b) => a.cost - b.cost)[0];
-
-                // IF提案
-                let ifSuggestions = [];
-                if (dt > 3) ifSuggestions.push(`厚みを3cm以内にできれば、送料が劇的に下がり利益がUPします！`);
-                if (priorities.includes('anon') && selected.cost > 185) ifSuggestions.push(`「匿名なし」でもよければ、クリックポスト(¥185)等でさらに利益が残ります。`);
-
-                const totalExpense = fee + selected.cost + ic + pc;
-                return { 
-                    profit: Math.floor(p - totalExpense), 
-                    fee: Math.floor(fee), 
-                    feeFormula,
-                    shipping: selected.cost, 
-                    methodName: selected.name,
-                    methodInfo: selected.info,
-                    isApprox: selected.isApprox,
-                    ifSuggestions
-                };
-            };
-
-            const res = calculate();
-
-            return (
-                <div>
-                    <h1>送料ナビ Pro</h1>
-                    <div className="card">
-                        <label className="label">販売サイト</label>
-                        <select value={site} onChange={(e) => setSite(e.target.value)}>
-                            <option value="メルカリ">メルカリ</option>
-                            <option value="メルカリショップス">メルカリショップス</option>
-                            <option value="BASE">BASE</option>
-                            <option value="ラクマ">ラクマ</option>
-                        </select>
-
-                        <label className="label">こだわり（複数選択可）</label>
-                        <div className="priority-grid">
-                            <input type="checkbox" id="anon" className="pri-check" checked={priorities.includes('anon')} onChange={() => togglePriority('anon')} />
-                            <label htmlFor="anon" className="pri-label">匿名発送</label>
-                            <input type="checkbox" id="trace" className="pri-check" checked={priorities.includes('trace')} onChange={() => togglePriority('trace')} />
-                            <label htmlFor="trace" className="pri-label">追跡あり</label>
-                            <input type="checkbox" id="conv" className="pri-check" checked={priorities.includes('conv')} onChange={() => togglePriority('conv')} />
-                            <label htmlFor="conv" className="pri-label">コンビニ/ポスト</label>
-                        </div>
-
-                        <label className="label">価格設定 (円)</label>
-                        <input type="text" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} onFocus={(e) => e.target.select()} />
-                        <div className="grid-2">
-                            <div><label className="label">原価</label><input type="text" value={itemCost} onChange={(e) => setItemCost(e.target.value)} onFocus={(e) => e.target.select()} /></div>
-                            <div><label className="label">資材費</label><input type="text" value={packingCost} onChange={(e) => setPackingCost(e.target.value)} onFocus={(e) => e.target.select()} /></div>
-                        </div>
-
-                        <label className="label">サイズ・重さ (cm/g)</label>
-                        <div className="size-inputs">
-                            <input type="text" placeholder="幅" value={dims.w} onChange={(e) => setDims({...dims, w: e.target.value})} />
-                            <input type="text" placeholder="高" value={dims.h} onChange={(e) => setDims({...dims, h: e.target.value})} />
-                            <input type="text" placeholder="厚" value={dims.t} onChange={(e) => setDims({...dims, t: e.target.value})} />
-                        </div>
-                        <input type="text" placeholder="重さ(g)" value={weight} onChange={(e) => setWeight(e.target.value)} onFocus={(e) => e.target.select()} />
-                    </div>
-
-                    <div className="card">
-                        <div className="result-box">
-                            <div style={{fontSize: '0.8rem'}}>最終純利益</div>
-                            <div className="profit-val">¥{res.profit.toLocaleString()}</div>
-                            <div className="method-badge">{res.methodName}</div>
-                            {res.isApprox && <div className="approx-note">※送り先により送料が変わるため概算です</div>}
-                        </div>
-
-                        <div className="spec-card">
-                            <strong>📦 配送ガイド</strong><br/>
-                            {res.methodInfo}
-                        </div>
-
-                        {res.ifSuggestions.length > 0 && (
-                            <div className="if-card">
-                                <strong>💡 利益UPのヒント</strong>
-                                {res.ifSuggestions.map((text, i) => <div key={i} className="if-item">{text}</div>)}
-                            </div>
-                        )}
-
-                        <div className="detail-table">
-                            <div className="detail-row"><span>販売価格</span><span>¥{Number(price).toLocaleString()}</span></div>
-                            <div className="detail-row" style={{color: '#e57373'}}>
-                                <span>販売手数料 <span className="formula">{res.feeFormula}</span></span>
-                                <span>- ¥{res.fee.toLocaleString()}</span>
-                            </div>
-                            <div className="detail-row" style={{color: '#e57373'}}><span>配送料</span><span>- ¥{res.shipping.toLocaleString()}</span></div>
-                            <div className="detail-row" style={{color: '#888'}}><span>コスト計(仕入・資材)</span><span>- ¥{(Number(itemCost) + Number(packingCost)).toLocaleString()}</span></div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "あなたのトークン"}'></script>
-    
-  </body>
-</html>
+                    { name: "らくらくメルカリ便(ネコポス)", cost: 210, anon:
