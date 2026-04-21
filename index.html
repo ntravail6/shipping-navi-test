@@ -3,113 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>送料ナビ Pro</title>
+    <title>📦 送料計算シミュレーター</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        :root {
-            --pink: #f06292; --pink-light: #fce4ec; --pink-bg: #fff0f3;
-            --green: #4caf50; --blue: #1565c0; --blue-light: #e3f2fd;
-            --text: #5d4037; --bg: #fffafb; --border: #f0dde2;
-        }
+        /* ── 元のUIをそのまま保持 ── */
+        :root { --main-pink: #de9ba3; --sub-pink: #f2dee2; --accent-green: #4caf50; --accent-orange: #ff9800; --text-main: #5d4037; --bg-soft: #fdf8f8; }
         * { box-sizing: border-box; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px 10px 30px; font-size: 14px; }
+        body { font-family: sans-serif; background: var(--bg-soft); color: var(--text-main); margin: 0; padding: 10px 10px 30px; }
         .container { max-width: 500px; margin: 0 auto; }
-        h1 { font-size: 1.2rem; text-align: center; color: var(--pink); margin: 8px 0 14px; }
-
-        .card { background: white; border-radius: 18px; padding: 16px; box-shadow: 0 4px 16px rgba(240,98,146,0.06); border: 1px solid var(--pink-light); margin-bottom: 12px; }
-
-        /* ラベル: #999→#666 で読みやすく */
-        .lbl { font-size: 0.78rem; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
-
-        select, input[type=number], input[type=text] { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid #eee; font-size: 1rem; margin-bottom: 10px; background: white; outline: none; -webkit-appearance: none; }
+        .card { background: white; border-radius: 18px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid var(--sub-pink); margin-bottom: 12px; }
+        .label { font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; display: block; }
+        select, input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #eee; font-size: 1rem; margin-bottom: 12px; background: white; outline: none; }
         input:disabled { background: #f9f9f9; color: #bbb; }
-        .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 
-        /* こだわり */
-        .pri-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-        .pri-chk { display: none; }
-        .pri-lbl { display: block; padding: 10px 4px; border-radius: 10px; border: 1px solid #eee; text-align: center; font-size: 0.75rem; cursor: pointer; color: #888; transition: 0.15s; }
-        .pri-chk:checked + .pri-lbl { background: var(--pink); color: white; border-color: var(--pink); font-weight: bold; }
+        .priority-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .pri-check { display: none; }
+        .pri-label { padding: 10px 5px; border-radius: 10px; border: 1px solid #eee; background: white; text-align: center; font-size: 0.75rem; cursor: pointer; color: #888; transition: 0.2s; display: block; }
+        .pri-check:checked + .pri-label { background: var(--main-pink); color: white; border-color: var(--main-pink); font-weight: bold; }
 
+        .result-box { background: #fdf0f1; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 10px; }
+        .profit-val { font-size: 2.2rem; font-weight: bold; }
+        .method-badge { display: inline-block; background: var(--accent-green); color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; margin-top: 5px; }
+        .rate-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; margin-left: 6px; vertical-align: middle; }
+
+        .spec-card { background: #e3f2fd; border: 1px solid #bbdefb; border-radius: 12px; padding: 10px; font-size: 0.75rem; color: #1565c0; margin-top: 10px; line-height: 1.5; }
+        .if-card { background: #fff3e0; border: 1px solid #ffe0b2; border-radius: 12px; padding: 10px; font-size: 0.75rem; color: #e65100; margin-top: 10px; }
+        .if-item { margin-top: 5px; padding-left: 10px; border-left: 2px solid var(--accent-orange); }
+
+        .detail-table { width: 100%; font-size: 0.8rem; border-top: 1px dashed #ddd; margin-top: 10px; padding-top: 10px; }
+        .detail-row { display: flex; justify-content: space-between; margin-bottom: 4px; align-items: baseline; }
+        .detail-sub { font-size: 0.72rem; color: #bbb; padding-left: 12px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .formula { font-size: 0.65rem; color: #999; display: block; margin-top: 1px; }
+        .approx-note { font-size: 0.65rem; color: #f44336; margin-top: 2px; }
+        .size-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        h1 { font-size: 1.2rem; text-align: center; color: var(--main-pink); margin: 10px 0; }
+
+        /* ── 追加スタイル ── */
         /* 価格スライダー */
         .price-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 3px; outline: none; margin-bottom: 4px; padding: 0; border: none; cursor: pointer; }
-        .price-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--pink); cursor: pointer; box-shadow: 0 2px 8px rgba(240,98,146,0.4); }
+        .price-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--main-pink); cursor: pointer; box-shadow: 0 2px 8px rgba(222,155,163,0.4); }
         .slider-ends { display: flex; justify-content: space-between; font-size: 0.65rem; color: #bbb; margin-bottom: 10px; }
 
         /* 入力モードタブ */
         .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 4px 0 12px; }
-        .mode-tab { padding: 9px; border-radius: 10px; border: 1px solid #eee; background: white; font-size: 0.78rem; cursor: pointer; color: #888; transition: 0.15s; }
-        .mode-tab.active { background: var(--pink-bg); color: var(--pink); border-color: var(--pink-light); font-weight: bold; }
+        .mode-tab { padding: 9px; border-radius: 10px; border: 1px solid #eee; background: white; font-size: 0.78rem; cursor: pointer; color: #888; transition: 0.2s; }
+        .mode-tab.active { background: #fdf0f1; color: var(--main-pink); border-color: var(--sub-pink); font-weight: bold; }
 
         /* プリセット */
         .preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 8px; }
-        .preset-btn { padding: 10px 6px; border-radius: 10px; border: 1px solid #eee; background: white; font-size: 0.78rem; cursor: pointer; color: #666; text-align: center; transition: 0.15s; line-height: 1.3; }
-        .preset-btn.active { background: var(--pink-bg); color: var(--pink); border-color: var(--pink); font-weight: bold; }
-        .preset-summary { background: #f9f9f9; border-radius: 8px; padding: 8px 12px; font-size: 0.72rem; color: #888; text-align: center; margin-bottom: 4px; }
-        /* プリセット選択時のハイライトアニメ */
-        @keyframes flashInput { 0%,100%{background:white} 50%{background:#fff0f3} }
+        .preset-btn { padding: 10px 6px; border-radius: 10px; border: 1px solid #eee; background: white; font-size: 0.78rem; cursor: pointer; color: #777; text-align: center; transition: 0.2s; line-height: 1.3; }
+        .preset-btn.active { background: #fdf0f1; color: var(--main-pink); border-color: var(--main-pink); font-weight: bold; }
+        .preset-summary { background: #f9f9f9; border-radius: 8px; padding: 7px 10px; font-size: 0.7rem; color: #999; text-align: center; margin-bottom: 4px; }
+        @keyframes flashInput { 0%,100%{background:white} 50%{background:#fdf0f1} }
         .flash { animation: flashInput 0.5s ease; }
 
-        /* 結果ボックス */
-        .result-box { background: var(--pink-bg); padding: 16px; border-radius: 15px; text-align: center; margin-bottom: 10px; }
-        .profit-val { font-size: 2.5rem; font-weight: bold; line-height: 1.1; }
-        .rate-badge { display: inline-block; padding: 3px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-top: 6px; }
-        .method-link { display: inline-block; background: var(--green); color: white !important; padding: 9px 18px; border-radius: 22px; font-size: 0.85rem; margin-top: 10px; text-decoration: none; font-weight: bold; box-shadow: 0 3px 10px rgba(76,175,80,0.3); }
-        .spec-card { background: var(--blue-light); border: 1px solid #bbdefb; border-radius: 12px; padding: 10px 12px; font-size: 0.75rem; color: var(--blue); margin-top: 10px; line-height: 1.6; }
+        /* カードヘッダー */
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .reset-btn { font-size: 0.72rem; color: #bbb; background: none; border: 1px solid #eee; border-radius: 8px; cursor: pointer; padding: 4px 10px; }
 
-        /* 内訳 */
-        .breakdown { border-top: 1px dashed var(--border); margin-top: 12px; padding-top: 10px; }
-        .bd-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.8rem; padding: 3px 0; }
-        .bd-row.income  { color: var(--green); font-weight: bold; }
-        .bd-row.deduct  { color: #e57373; }
-        .bd-row.neutral { color: #777; }
-        .bd-row.sub     { color: #bbb; font-size: 0.72rem; padding-left: 10px; }
-        .bd-row.total   { color: var(--pink); font-weight: bold; font-size: 0.9rem; margin-top: 4px; }
-        .bd-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
-
-        /* 配送候補: other を #888 に */
-        .cand-list { margin-top: 12px; border-top: 1px solid #f0f0f0; padding-top: 10px; }
-        .cand-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 5px 0; border-bottom: 1px solid #f8f8f8; gap: 6px; }
-        .cand-item.best  { color: var(--pink); font-weight: bold; }
-        .cand-item.other { color: #888; }
-        .cand-cost { text-align: right; white-space: nowrap; }
-        .cand-cost-sub { font-size: 0.63rem; color: #bbb; }
+        /* 全サイト比較 */
+        .cmp-hint { font-size: 0.65rem; color: #bbb; margin-bottom: 8px; }
+        .cmp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .cmp-cell { border: 1.5px solid #eee; border-radius: 12px; padding: 10px 6px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .cmp-cell.is-best { border-color: var(--main-pink); background: #fdf0f1; }
+        .cmp-cell.is-current { box-shadow: 0 0 0 2px var(--main-pink); }
+        .cmp-site { font-size: 0.7rem; font-weight: bold; color: #999; margin-bottom: 3px; }
+        .cmp-profit { font-size: 1.1rem; font-weight: bold; line-height: 1.1; }
+        .cmp-rate { font-size: 0.7rem; font-weight: bold; margin: 2px 0; }
+        .cmp-method { font-size: 0.6rem; color: #bbb; margin-top: 3px; line-height: 1.3; }
+        .cmp-badge { display: inline-block; background: var(--main-pink); color: white; font-size: 0.58rem; padding: 1px 5px; border-radius: 8px; margin-top: 3px; }
 
         /* ボタン2つ */
         .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
         .btn-copy { background: #f5f5f5; border: none; padding: 11px 6px; border-radius: 10px; font-size: 0.8rem; color: #666; cursor: pointer; }
-        .btn-save { background: var(--pink-bg); border: 1px solid var(--pink-light); padding: 11px 6px; border-radius: 10px; font-size: 0.8rem; color: var(--pink); cursor: pointer; font-weight: bold; }
-
-        /* 全サイト比較 */
-        .cmp-hint { font-size: 0.65rem; color: #bbb; margin-bottom: 8px; }
-        .cmp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .cmp-cell { border: 1.5px solid #eee; border-radius: 12px; padding: 10px 6px; text-align: center; cursor: pointer; transition: 0.15s; }
-        .cmp-cell:active { opacity: 0.8; }
-        .cmp-cell.is-best    { border-color: var(--pink); background: var(--pink-bg); }
-        .cmp-cell.is-current { box-shadow: 0 0 0 2px var(--pink); }
-        .cmp-site   { font-size: 0.7rem; font-weight: bold; color: #888; margin-bottom: 3px; }
-        .cmp-profit { font-size: 1.15rem; font-weight: bold; line-height: 1.1; }
-        .cmp-rate   { font-size: 0.7rem; font-weight: bold; margin: 2px 0; }
-        .cmp-method { font-size: 0.6rem; color: #bbb; margin-top: 3px; line-height: 1.3; }
-        .cmp-badge  { display: inline-block; background: var(--pink); color: white; font-size: 0.58rem; padding: 1px 5px; border-radius: 8px; margin-top: 3px; }
+        .btn-save { background: #fdf0f1; border: 1px solid var(--sub-pink); padding: 11px 6px; border-radius: 10px; font-size: 0.8rem; color: var(--main-pink); cursor: pointer; font-weight: bold; }
 
         /* 履歴 */
-        .hist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .hist-hint   { font-size: 0.65rem; color: #bbb; margin-bottom: 8px; }
-        .hist-item   { padding: 9px 10px; border-radius: 10px; border: 1px solid #f0f0f0; margin-bottom: 6px; cursor: pointer; transition: 0.15s; }
+        .hist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .hist-hint { font-size: 0.65rem; color: #bbb; margin-bottom: 8px; }
+        .hist-item { padding: 9px 10px; border-radius: 10px; border: 1px solid #f5f5f5; margin-bottom: 6px; cursor: pointer; transition: 0.2s; }
         .hist-item:hover { background: #fafafa; }
-        .hist-meta   { font-size: 0.68rem; color: #bbb; margin-bottom: 2px; }
-        .hist-main   { font-size: 0.85rem; }
-        .hist-rate   { font-size: 0.72rem; color: #aaa; margin-left: 5px; }
+        .hist-meta { font-size: 0.68rem; color: #bbb; margin-bottom: 2px; }
+        .hist-main { font-size: 0.85rem; }
+        .hist-rate { font-size: 0.72rem; color: #aaa; margin-left: 5px; }
         .hist-method { font-size: 0.68rem; color: #bbb; margin-top: 1px; }
-        .clear-btn   { font-size: 0.72rem; color: #e57373; background: #fff5f5; border: 1px solid #ffcdd2; border-radius: 8px; cursor: pointer; padding: 4px 10px; }
-        .reset-btn   { font-size: 0.72rem; color: #bbb; background: none; border: 1px solid #eee; border-radius: 8px; cursor: pointer; padding: 4px 10px; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .clear-btn { font-size: 0.72rem; color: #e57373; background: #fff5f5; border: 1px solid #ffcdd2; border-radius: 8px; cursor: pointer; padding: 4px 10px; }
 
-        /* 注意書き */
+        /* localStorage注意書き */
         .storage-note { background: #fffde7; border: 1px solid #fff176; border-radius: 10px; padding: 8px 12px; font-size: 0.7rem; color: #827717; line-height: 1.6; margin-bottom: 12px; }
 
         .note { font-size: 0.62rem; color: #ccc; text-align: center; padding: 4px 0 8px; }
@@ -117,9 +100,11 @@
 </head>
 <body>
 <div id="root" class="container"></div>
-<script type="text/babel">
-const { useState, useEffect, useRef } = React;
 
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// ── プリセット ───────────────────────────────────────────────
 const PRESETS = [
     { label:'📇 トレカ',       h:'9',    w:'6.3',  t:'0.3', wg:'10'  },
     { label:'📚 文庫本',       h:'15',   w:'10.5', t:'1.5', wg:'200' },
@@ -133,125 +118,210 @@ const PRESETS = [
     { label:'🎮 ゲームソフト', h:'19',   w:'13.5', t:'1.5', wg:'100' },
 ];
 
-const SITES   = ['メルカリ', 'ラクマ', 'BASE'];
-const DEF_FEE = { 'メルカリ':'10', 'ラクマ':'10', 'BASE':'6.6' };
+const SITES   = ['メルカリ', 'メルカリショップス', 'ラクマ', 'BASE', 'Yahoo!フリマ'];
+const DEF_FEE = { 'メルカリ':'10', 'メルカリショップス':'10', 'ラクマ':'10', 'BASE':'6.6', 'Yahoo!フリマ':'5' };
 
+// ── 配送方法マスタ ───────────────────────────────────────────
 function getMethods(dh, dw, dt, wg) {
     const ds = dh + dw + dt;
     const RU = 'https://fril.jp/ts/kantanrakumapack/';
     const MY = 'https://jp-news.mercari.com/more/yuyu-mercari';
     const MR = 'https://jp-news.mercari.com/more/rakuraku-mercari';
     const BA = 'https://baseu.jp/39033';
+
     const teikei = wg<=50?140: wg<=100?180: wg<=150?270: wg<=250?320: wg<=500?510: wg<=1000?750: null;
 
     return [
+        // ── 共通 ──
         { name:'定形外・規格内', shipping:teikei, material:0, cost:teikei,
-          anon:false, trace:false, url:null,
+          anon:false, trace:false, conv:false, url:null, isApprox:false,
           info:'❌匿名不可 / ❌追跡なし / 重量で料金変動 / A4・3cm',
           size: teikei!==null && dt<=3 && dh<=34 && dw<=25 },
+
         { name:'スマートレター', shipping:210, material:0, cost:210,
-          anon:false, trace:false, url:null,
+          anon:false, trace:false, conv:false, url:null, isApprox:false,
           info:'❌匿名不可 / ❌追跡なし / A5・2cm・1kg',
           size: dt<=2 && dh<=25 && dw<=17 && wg<=1000 },
+
         { name:'クリックポスト', shipping:185, material:0, cost:185,
-          anon:false, trace:true, url:'https://clickpost.jp/',
+          anon:false, trace:true, conv:false, url:'https://clickpost.jp/', isApprox:false,
           info:'❌匿名不可 / ✅追跡あり / A4・3cm・1kg',
           size: dt<=3 && dh<=34 && dw<=25 && wg<=1000 },
+
         { name:'こねこ便420', shipping:420, material:0, cost:420,
-          anon:false, trace:true, url:null,
+          anon:false, trace:true, conv:false, url:null, isApprox:false,
           info:'❌匿名不可 / ✅追跡あり / A4・3cm（東京都限定資材）',
           size: dt<=3 && dh<=34 && dw<=24.8 },
+
         { name:'レターパックライト', shipping:430, material:0, cost:430,
-          anon:false, trace:true, url:null,
+          anon:false, trace:true, conv:false, url:null, isApprox:false,
           info:'❌匿名不可 / ✅追跡あり / A4・3cm・4kg / 郵便受け投函',
           size: dt<=3 && dh<=34 && dw<=24.8 && wg<=4000 },
+
         { name:'レターパックプラス', shipping:600, material:0, cost:600,
-          anon:false, trace:true, url:null,
+          anon:false, trace:true, conv:false, url:null, isApprox:false,
           info:'❌匿名不可 / ✅追跡あり / 厚さ制限なし・4kg / 対面受取',
           size: dh<=34 && dw<=24.8 && wg<=4000 },
 
+        // ── ラクマ専用 ──
         { name:'ラクマパック(ポストmini)', shipping:150, material:20, cost:170, materialNote:'専用封筒',
-          anon:true, trace:true, url:RU, info:'✅匿名 / 専用封筒必要(¥20) / A5・3cm・2kg',
+          anon:true, trace:true, conv:true, url:RU, isApprox:false,
+          info:'✅匿名 / 専用封筒必要(¥20) / A5・3cm・2kg',
           size: dt<=3 && dh<=21.1 && dw<=16.8 && wg<=2000, platform:['ラクマ'] },
+
         { name:'ラクマパック(ゆうパケットポスト)', shipping:175, material:5, cost:180, materialNote:'専用シール',
-          anon:true, trace:true, url:RU, info:'✅匿名 / 専用シール必要(¥5〜) / 3辺60cm・A4・3cm・2kg',
+          anon:true, trace:true, conv:true, url:RU, isApprox:false,
+          info:'✅匿名 / 専用シール必要(¥5〜) / 3辺60cm・A4・3cm・2kg',
           size: ds<=60 && dh<=34 && dt<=3 && wg<=2000, platform:['ラクマ'] },
+
         { name:'ラクマパック(ゆうパケット)', shipping:200, material:0, cost:200,
-          anon:true, trace:true, url:RU, info:'✅匿名 / 資材不要 / 3辺60cm・A4・3cm・1kg',
+          anon:true, trace:true, conv:true, url:RU, isApprox:false,
+          info:'✅匿名 / 資材不要 / 3辺60cm・A4・3cm・1kg',
           size: ds<=60 && dh<=34 && dt<=3 && wg<=1000, platform:['ラクマ'] },
+
         { name:'ラクマパック(ネコポス)', shipping:200, material:0, cost:200,
-          anon:true, trace:true, url:RU, info:'✅匿名 / 最短翌日 / 3辺60cm・A4・3cm・1kg',
+          anon:true, trace:true, conv:true, url:RU, isApprox:false,
+          info:'✅匿名 / 最短翌日 / 3辺60cm・A4・3cm・1kg',
           size: ds<=60 && dh<=34 && dt<=3 && wg<=1000, platform:['ラクマ'] },
+
         { name:'ラクマパック(ゆうパケットプラス)', shipping:380, material:65, cost:445, materialNote:'専用箱',
-          anon:true, trace:true, url:RU, info:'✅匿名 / 専用箱必要(¥65) / 24×17cm・7cm・2kg',
+          anon:true, trace:true, conv:true, url:RU, isApprox:false,
+          info:'✅匿名 / 専用箱必要(¥65) / 24×17cm・7cm・2kg',
           size: dt<=7 && dh<=24 && dw<=17 && wg<=2000, platform:['ラクマ'] },
+
         { name:'ラクマパック(宅急便コンパクト)', shipping:430, material:70, cost:500, materialNote:'専用BOX',
-          anon:true, trace:true, url:RU, info:'✅匿名 / 専用BOX必要(¥70) / 25×20cm・5cm',
+          anon:true, trace:true, conv:true, url:RU, isApprox:false,
+          info:'✅匿名 / 専用BOX必要(¥70) / 25×20cm・5cm',
           size: dt<=5 && dh<=25 && dw<=20, platform:['ラクマ'] },
+
         { name:'ラクマパック(宅急便60)', shipping:650, material:0, cost:650,
-          anon:true, trace:true, url:RU, info:'✅匿名 / ヤマト運輸 / 60サイズ・2kg',
+          anon:true, trace:true, conv:true, url:RU, isApprox:false,
+          info:'✅匿名 / ヤマト運輸 / 60サイズ・2kg',
           size:true, platform:['ラクマ'] },
+
         { name:'ラクマパック(ゆうパック60)', shipping:700, material:0, cost:700,
-          anon:true, trace:true, url:RU, info:'✅匿名 / 日本郵便 / 60サイズ・25kg',
+          anon:true, trace:true, conv:true, url:RU, isApprox:false,
+          info:'✅匿名 / 日本郵便 / 60サイズ・25kg',
           size:true, platform:['ラクマ'] },
 
+        // ── メルカリ専用 ──
         { name:'メルカリ便(ポストmini)', shipping:160, material:20, cost:180, materialNote:'専用封筒',
-          anon:true, trace:true, url:MY, info:'✅匿名 / 専用封筒必要(¥20) / A5・3cm',
-          size: dt<=3 && dh<=21.1 && dw<=16.8, platform:['メルカリ'] },
-        { name:'メルカリ便(ゆうパケットポスト)', shipping:215, material:5, cost:220, materialNote:'専用シール',
-          anon:true, trace:true, url:MY, info:'✅匿名 / 専用シール必要(¥5) / 3辺60cm・A4・2kg',
-          size: ds<=60 && dh<=34 && wg<=2000, platform:['メルカリ'] },
-        { name:'メルカリ便(ゆうパケット)', shipping:230, material:0, cost:230,
-          anon:true, trace:true, url:MY, info:'✅匿名 / 資材不要 / A4・3cm・1kg',
-          size: dh<=34 && dw<=23 && dt<=3 && wg<=1000, platform:['メルカリ'] },
-        { name:'メルカリ便(ネコポス)', shipping:210, material:0, cost:210,
-          anon:true, trace:true, url:MR, info:'✅匿名 / 最短翌日 / 3辺60cm・A4・3cm・1kg',
-          size: ds<=60 && dh<=34 && dt<=3 && wg<=1000, platform:['メルカリ'] },
-        { name:'メルカリ便(ゆうパケットプラス)', shipping:455, material:65, cost:520, materialNote:'専用箱',
-          anon:true, trace:true, url:MY, info:'✅匿名 / 専用箱必要(¥65) / 24×17cm・7cm・2kg',
-          size: dt<=7 && dh<=24 && dw<=17 && wg<=2000, platform:['メルカリ'] },
-        { name:'メルカリ便(宅急便コンパクト)', shipping:450, material:70, cost:520, materialNote:'専用BOX',
-          anon:true, trace:true, url:MR, info:'✅匿名 / 専用BOX必要(¥70) / 25×20cm・5cm',
-          size: dt<=5 && dh<=25 && dw<=20, platform:['メルカリ'] },
-        { name:'メルカリ便(宅急便60)', shipping:750, material:0, cost:750,
-          anon:true, trace:true, url:MR, info:'✅匿名 / ヤマト運輸 / 60サイズ',
-          size:true, platform:['メルカリ'] },
+          anon:true, trace:true, conv:true, url:MY, isApprox:false,
+          info:'✅匿名 / 専用封筒必要(¥20) / A5・3cm',
+          size: dt<=3 && dh<=21.1 && dw<=16.8, platform:['メルカリ','メルカリショップス'] },
 
+        { name:'メルカリ便(ゆうパケットポスト)', shipping:215, material:5, cost:220, materialNote:'専用シール',
+          anon:true, trace:true, conv:true, url:MY, isApprox:false,
+          info:'✅匿名 / 専用シール必要(¥5) / 3辺60cm・A4・2kg',
+          size: ds<=60 && dh<=34 && wg<=2000, platform:['メルカリ','メルカリショップス'] },
+
+        { name:'メルカリ便(ゆうパケット)', shipping:230, material:0, cost:230,
+          anon:true, trace:true, conv:true, url:MY, isApprox:false,
+          info:'✅匿名 / 資材不要 / A4・3cm・1kg',
+          size: dh<=34 && dw<=23 && dt<=3 && wg<=1000, platform:['メルカリ','メルカリショップス'] },
+
+        { name:'メルカリ便(ネコポス)', shipping:210, material:0, cost:210,
+          anon:true, trace:true, conv:true, url:MR, isApprox:false,
+          info:'✅匿名 / 最短翌日 / 3辺60cm・A4・3cm・1kg',
+          size: ds<=60 && dh<=34 && dt<=3 && wg<=1000, platform:['メルカリ','メルカリショップス'] },
+
+        { name:'メルカリ便(ゆうパケットプラス)', shipping:455, material:65, cost:520, materialNote:'専用箱',
+          anon:true, trace:true, conv:true, url:MY, isApprox:false,
+          info:'✅匿名 / 専用箱必要(¥65) / 24×17cm・7cm・2kg',
+          size: dt<=7 && dh<=24 && dw<=17 && wg<=2000, platform:['メルカリ','メルカリショップス'] },
+
+        { name:'メルカリ便(宅急便コンパクト)', shipping:450, material:70, cost:520, materialNote:'専用BOX',
+          anon:true, trace:true, conv:true, url:MR, isApprox:false,
+          info:'✅匿名 / 専用BOX必要(¥70) / 25×20cm・5cm',
+          size: dt<=5 && dh<=25 && dw<=20, platform:['メルカリ','メルカリショップス'] },
+
+        { name:'メルカリ便(宅急便60)', shipping:750, material:0, cost:750,
+          anon:true, trace:true, conv:true, url:MR, isApprox:false,
+          info:'✅匿名 / ヤマト運輸 / 60サイズ',
+          size:true, platform:['メルカリ','メルカリショップス'] },
+
+        // ── BASE専用 ──
         { name:'BASEネコポス', shipping:290, material:0, cost:290,
-          anon:true, trace:true, url:BA, info:'✅匿名+¥60 / 資材不要 / 3辺60cm・長辺34cm・3cm・1kg',
+          anon:true, trace:true, conv:true, url:BA, isApprox:false,
+          info:'✅匿名+¥60 / 資材不要 / 3辺60cm・長辺34cm・3cm・1kg',
           size: ds<=60 && dh<=34 && dt<=3 && wg<=1000, platform:['BASE'] },
+
         { name:'BASE宅急便コンパクト', shipping:500, material:70, cost:570, materialNote:'専用BOX',
-          anon:true, trace:true, url:BA, info:'✅匿名+¥60 / 専用BOX必要(¥70) / 25×20×5cm または薄型34×24.8cm',
+          anon:true, trace:true, conv:true, url:BA, isApprox:false,
+          info:'✅匿名+¥60 / 専用BOX必要(¥70) / 25×20×5cm または薄型34×24.8cm',
           size: (dt<=5 && dh<=25 && dw<=20)||(dh<=34 && dw<=24.8), platform:['BASE'] },
+
         { name:'BASE宅急便60', shipping:760, material:0, cost:760,
-          anon:true, trace:true, url:BA, info:'✅匿名+¥60 / 資材不要 / 3辺60cm以内・2kg',
+          anon:true, trace:true, conv:true, url:BA, isApprox:false,
+          info:'✅匿名+¥60 / 資材不要 / 3辺60cm以内・2kg',
           size: ds<=60 && wg<=2000, platform:['BASE'] },
+
         { name:'BASE宅急便80', shipping:1030, material:0, cost:1030,
-          anon:true, trace:true, url:BA, info:'✅匿名+¥60 / 資材不要 / 3辺80cm以内・5kg',
+          anon:true, trace:true, conv:true, url:BA, isApprox:false,
+          info:'✅匿名+¥60 / 資材不要 / 3辺80cm以内・5kg',
           size: ds<=80 && wg<=5000, platform:['BASE'] },
+        // ── Yahoo!フリマ専用（おてがる配送・2025年11月改定後）──
+        { name:'Yahoo!フリマ(ゆうパケットポストmini)', shipping:160, material:20, cost:180, materialNote:'専用封筒',
+          anon:true, trace:true, conv:true, url:'https://paypayfleamarket.yahoo.co.jp/contents/shipping', isApprox:false,
+          info:'✅匿名 / 専用封筒必要(¥20) / A5・3cm・2kg / ポスト投函',
+          size: dt<=3 && dh<=21.1 && dw<=16.8 && wg<=2000, platform:['Yahoo!フリマ'] },
+
+        { name:'Yahoo!フリマ(ゆうパケットポスト)', shipping:210, material:5, cost:215, materialNote:'専用シール',
+          anon:true, trace:true, conv:true, url:'https://paypayfleamarket.yahoo.co.jp/contents/shipping', isApprox:false,
+          info:'✅匿名 / 専用シール必要(¥5〜) / 3辺60cm・A4・2kg / ポスト投函',
+          size: ds<=60 && dh<=34 && wg<=2000, platform:['Yahoo!フリマ'] },
+
+        { name:'Yahoo!フリマ(ゆうパケット)', shipping:215, material:0, cost:215,
+          anon:true, trace:true, conv:true, url:'https://paypayfleamarket.yahoo.co.jp/contents/shipping', isApprox:false,
+          info:'✅匿名 / 資材不要 / 3辺60cm・A4・3cm・1kg',
+          size: ds<=60 && dh<=34 && dt<=3 && wg<=1000, platform:['Yahoo!フリマ'] },
+
+        { name:'Yahoo!フリマ(ネコポス)', shipping:210, material:0, cost:210,
+          anon:true, trace:true, conv:true, url:'https://paypayfleamarket.yahoo.co.jp/contents/shipping', isApprox:false,
+          info:'✅匿名 / 資材不要 / 3辺60cm・長辺34cm・3cm・1kg',
+          size: ds<=60 && dh<=34 && dt<=3 && wg<=1000, platform:['Yahoo!フリマ'] },
+
+        { name:'Yahoo!フリマ(ゆうパケットプラス)', shipping:410, material:65, cost:475, materialNote:'専用箱',
+          anon:true, trace:true, conv:true, url:'https://paypayfleamarket.yahoo.co.jp/contents/shipping', isApprox:false,
+          info:'✅匿名 / 専用箱必要(¥65) / 24×17cm・7cm・2kg',
+          size: dt<=7 && dh<=24 && dw<=17 && wg<=2000, platform:['Yahoo!フリマ'] },
+
+        { name:'Yahoo!フリマ(宅急便コンパクト)', shipping:490, material:70, cost:560, materialNote:'専用BOX',
+          anon:true, trace:true, conv:true, url:'https://paypayfleamarket.yahoo.co.jp/contents/shipping', isApprox:false,
+          info:'✅匿名 / 専用BOX必要(¥70) / 25×20cm・5cm',
+          size: dt<=5 && dh<=25 && dw<=20, platform:['Yahoo!フリマ'] },
+
+        { name:'Yahoo!フリマ(宅急便60)', shipping:750, material:0, cost:750,
+          anon:true, trace:true, conv:true, url:'https://paypayfleamarket.yahoo.co.jp/contents/shipping', isApprox:false,
+          info:'✅匿名 / ヤマト運輸 / 60サイズ・2kg',
+          size:true, platform:['Yahoo!フリマ'] },
     ];
 }
 
+// ── サイト別計算 ─────────────────────────────────────────────
 function calcSite(tSite, tFee, p, dh, dw, dt, wg, ic, pc, pris) {
-    let fee, feeLabel;
+    let fee, feeFormula;
     if (tSite==='BASE') {
-        if (tFee==='2.9') { fee=p*0.029; feeLabel='2.9%（グロース）'; }
-        else               { fee=p*0.066+40; feeLabel='6.6%+40円（通常）'; }
+        if (tFee==='2.9') { fee=p*0.029; feeFormula='販売価格 × 2.9%（グロース）'; }
+        else               { fee=p*0.066+40; feeFormula='販売価格 × 6.6% + 40円'; }
     } else if (tSite==='ラクマ') {
-        fee=p*(Number(tFee)/100); feeLabel=tFee+'%';
+        fee=p*(Number(tFee)/100); feeFormula=`販売価格 × ${tFee}%`;
+    } else if (tSite==='Yahoo!フリマ') {
+        fee=p*0.05; feeFormula='販売価格 × 5%';
     } else {
-        fee=p*0.10; feeLabel='10%';
+        fee=p*0.10; feeFormula='販売価格 × 10%';
     }
     const all   = getMethods(dh, dw, dt, wg);
     let avail   = all.filter(m => m.size && (!m.platform || m.platform.includes(tSite)));
     if (pris.includes('anon'))  avail = avail.filter(m => m.anon);
     if (pris.includes('trace')) avail = avail.filter(m => m.trace);
+    if (pris.includes('conv'))  avail = avail.filter(m => m.conv);
     avail.sort((a,b) => a.cost-b.cost);
     const sel     = avail.length>0 ? avail[0] : all.find(m => (m.name.includes('60')||m.name.includes('宅急便')) && (!m.platform||m.platform.includes(tSite)));
     const feeCeil = Math.ceil(fee);
     const profit  = sel ? Math.floor(p-feeCeil-sel.cost-ic-pc) : null;
     const rate    = (p>0 && profit!==null) ? Math.round((profit/p)*1000)/10 : 0;
-    return { sel, avail, profit, rate, feeCeil, feeLabel };
+    return { sel, avail, profit, rate, feeCeil, feeFormula };
 }
 
 function App() {
@@ -264,21 +334,21 @@ function App() {
     const [iCost,   setICost]   = useState(()=>load('sn_ic','500'));
     const [pCost,   setPCost]   = useState(()=>load('sn_pc','50'));
     const [weight,  setWeight]  = useState(()=>load('sn_w','100'));
-    const [dims,    setDims]    = useState(()=>load('sn_dims',{h:'21',w:'16',t:'2.5'}));
+    const [dims,    setDims]    = useState(()=>load('sn_dims',{h:'25',w:'20',t:'2.5'}));
     const [mode,    setMode]    = useState('detail');
     const [preset,  setPreset]  = useState(null);
     const [hist,    setHist]    = useState(()=>load('sn_hist',[]));
     const [flash,   setFlash]   = useState(false);
 
-    useEffect(()=>{ localStorage.setItem('sn_site',JSON.stringify(site)); },[site]);
-    useEffect(()=>{ localStorage.setItem('sn_fee',JSON.stringify(feeRate)); },[feeRate]);
-    useEffect(()=>{ localStorage.setItem('sn_pri',JSON.stringify(pris)); },[pris]);
-    useEffect(()=>{ localStorage.setItem('sn_price',JSON.stringify(price)); },[price]);
-    useEffect(()=>{ localStorage.setItem('sn_ic',JSON.stringify(iCost)); },[iCost]);
-    useEffect(()=>{ localStorage.setItem('sn_pc',JSON.stringify(pCost)); },[pCost]);
-    useEffect(()=>{ localStorage.setItem('sn_w',JSON.stringify(weight)); },[weight]);
-    useEffect(()=>{ localStorage.setItem('sn_dims',JSON.stringify(dims)); },[dims]);
-    useEffect(()=>{ localStorage.setItem('sn_hist',JSON.stringify(hist)); },[hist]);
+    useEffect(()=>{ localStorage.setItem('sn_site',  JSON.stringify(site));    },[site]);
+    useEffect(()=>{ localStorage.setItem('sn_fee',   JSON.stringify(feeRate)); },[feeRate]);
+    useEffect(()=>{ localStorage.setItem('sn_pri',   JSON.stringify(pris));    },[pris]);
+    useEffect(()=>{ localStorage.setItem('sn_price', JSON.stringify(price));   },[price]);
+    useEffect(()=>{ localStorage.setItem('sn_ic',    JSON.stringify(iCost));   },[iCost]);
+    useEffect(()=>{ localStorage.setItem('sn_pc',    JSON.stringify(pCost));   },[pCost]);
+    useEffect(()=>{ localStorage.setItem('sn_w',     JSON.stringify(weight));  },[weight]);
+    useEffect(()=>{ localStorage.setItem('sn_dims',  JSON.stringify(dims));    },[dims]);
+    useEffect(()=>{ localStorage.setItem('sn_hist',  JSON.stringify(hist));    },[hist]);
 
     const togglePri = v => setPris(prev => prev.includes(v)?prev.filter(x=>x!==v):[...prev,v]);
 
@@ -293,46 +363,41 @@ function App() {
     const res = calcSite(site, feeRate, p, dh, dw, dt, wg, ic, pc, pris);
     const m   = res.sel;
 
-    // 全サイト比較
-    const cmp = SITES.map(s => ({ site:s, r:calcSite(s, DEF_FEE[s], p, dh, dw, dt, wg, ic, pc, pris) }));
+    // 利益UPのヒント
+    const hints = [];
+    if (dt > 3) hints.push('厚みを3cm以内にできれば、送料が劇的に下がり利益がUPします！');
+    if (pris.includes('anon') && m && m.cost > 185) hints.push('「匿名なし」でもよければ、クリックポスト(¥185)等でさらに利益が残ります。');
+    if (p > 0 && res.rate < 10 && res.rate >= 0) hints.push('利益率が10%未満です。販売価格の見直しや原価の削減を検討してみましょう。');
+
+    // 全サイト比較（CMP用は通常手数料）
+    const CMP_SITES = ['メルカリ','ラクマ','BASE','Yahoo!フリマ'];
+    const cmp = CMP_SITES.map(s => ({ site:s, r:calcSite(s, DEF_FEE[s], p, dh, dw, dt, wg, ic, pc, pris) }));
     const bestSite = cmp.reduce((b,c) => (c.r.profit!==null&&(b===null||c.r.profit>b.r.profit))?c:b, null);
 
-    // スライダー (max 25000)
+    // スライダー
     const SMIN=100, SMAX=25000;
-    const sVal = Math.min(Math.max(p||SMIN, SMIN), SMAX);
+    const sVal = Math.min(Math.max(p||SMIN,SMIN),SMAX);
     const sPct = Math.round(((sVal-SMIN)/(SMAX-SMIN))*100);
-    const sliderBg = `linear-gradient(to right, var(--pink) ${sPct}%, #eee ${sPct}%)`;
+    const sliderBg = `linear-gradient(to right, var(--main-pink) ${sPct}%, #eee ${sPct}%)`;
 
     const rateColor = r => r>=20?'#2e7d32':r>=0?'#e65100':'#c62828';
     const rateBg    = r => r>=20?'#e8f5e9':r>=0?'#fff3e0':'#fce4e4';
 
-    const resetInputs = () => {
-        if (!window.confirm('入力内容をすべてリセットしますか？')) return;
-        setSite('メルカリ'); setFeeRate('10'); setPris(['anon']);
-        setPrice(''); setICost(''); setPCost('');
-        setWeight(''); setDims({h:'',w:'',t:''});
-        setPreset(null);
-    };
-
-    const applyPreset = (i) => {
+    const applyPreset = i => {
         const pr = PRESETS[i];
-        setPreset(i);
-        setDims({h:pr.h, w:pr.w, t:pr.t});
-        setWeight(pr.wg);
-        setFlash(true);
-        setTimeout(()=>setFlash(false), 600);
+        setPreset(i); setDims({h:pr.h,w:pr.w,t:pr.t}); setWeight(pr.wg);
+        setFlash(true); setTimeout(()=>setFlash(false),600);
     };
 
     const saveHist = () => {
         if (!m) return;
         const now = new Date();
-        const entry = {
+        setHist(prev => [{
             id: now.getTime(),
             date: `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
             site, feeRate, price, iCost, pCost, weight, dims,
             profit:res.profit, rate:res.rate, methodName:m.name,
-        };
-        setHist(prev => [entry,...prev].slice(0,10));
+        }, ...prev].slice(0,10));
         alert('履歴に保存しました！');
     };
 
@@ -343,14 +408,21 @@ function App() {
             '【送料ナビ Pro 計算結果】',
             `サイト: ${site}`,
             `販売価格: ¥${price}`,
-            `手数料(${res.feeLabel}): -¥${res.feeCeil}`,
+            `手数料: -¥${res.feeCeil}（${res.feeFormula}）`,
             `送料(${m.name}): -¥${m.shipping}${mat}`,
             ic>0?`原価: -¥${iCost}`:null,
-            pc>0?`梱包資材費: -¥${pCost}`:null,
+            pc>0?`資材費: -¥${pCost}`:null,
             `純利益: ¥${res.profit}（利益率 ${res.rate}%）`,
         ].filter(Boolean).join('\n');
         navigator.clipboard.writeText(txt);
         alert('クリップボードにコピーしました！');
+    };
+
+    const resetInputs = () => {
+        if (!window.confirm('入力内容をすべてリセットしますか？')) return;
+        setSite('メルカリ'); setFeeRate('10'); setPris(['anon']);
+        setPrice(''); setICost(''); setPCost('');
+        setWeight(''); setDims({h:'',w:'',t:''}); setPreset(null);
     };
 
     const restoreHist = e => {
@@ -363,7 +435,7 @@ function App() {
 
     return (
         <div>
-            <h1>🚀 送料ナビ Pro</h1>
+            <h1>📦 送料計算シミュレーター</h1>
 
             {/* localStorage 注意書き */}
             <div className="storage-note">
@@ -371,30 +443,31 @@ function App() {
                 別のブラウザや端末では引き継がれません。計算履歴は「履歴に保存」ボタンで保存できます。
             </div>
 
-            {/* ── 入力カード ────────────────────────── */}
+            {/* ── 入力カード ── */}
             <div className="card">
                 <div className="card-header">
-                    <span className="lbl" style={{margin:0}}>📝 商品情報を入力</span>
+                    <span className="label" style={{margin:0}}>📝 商品情報を入力</span>
                     <button className="reset-btn" onClick={resetInputs}>🗑 リセット</button>
                 </div>
-                {/* サイト選択（メルカリ時は手数料非表示） */}
-                {site === 'メルカリ' ? (
+
+                {/* サイト・手数料 */}
+                {(site==='メルカリ'||site==='メルカリショップス') ? (
                     <div>
-                        <label className="lbl">販売サイト</label>
+                        <label className="label">販売サイト</label>
                         <select value={site} onChange={e=>{ setSite(e.target.value); setFeeRate(DEF_FEE[e.target.value]); }}>
                             {SITES.map(s=><option key={s}>{s}</option>)}
                         </select>
                     </div>
                 ) : (
-                    <div className="g2">
+                    <div className="grid-2">
                         <div>
-                            <label className="lbl">販売サイト</label>
+                            <label className="label">販売サイト</label>
                             <select value={site} onChange={e=>{ setSite(e.target.value); setFeeRate(DEF_FEE[e.target.value]); }}>
                                 {SITES.map(s=><option key={s}>{s}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="lbl">手数料率</label>
+                            <label className="label">手数料率</label>
                             {site==='BASE' ? (
                                 <select value={feeRate} onChange={e=>setFeeRate(e.target.value)}>
                                     <option value="6.6">通常(6.6%+40円)</option>
@@ -411,17 +484,17 @@ function App() {
                     </div>
                 )}
 
-                <label className="lbl">こだわり条件</label>
-                <div className="pri-wrap">
-                    {[['anon','📦 匿名発送'],['trace','🔍 追跡あり']].map(([v,lbl])=>(
+                <label className="label">こだわり（複数選択可）</label>
+                <div className="priority-grid">
+                    {[['anon','📦 匿名発送'],['trace','🔍 追跡あり'],['conv','🏪 コンビニ/ポスト']].map(([v,lbl])=>(
                         <React.Fragment key={v}>
-                            <input type="checkbox" id={v} className="pri-chk" checked={pris.includes(v)} onChange={()=>togglePri(v)} />
-                            <label htmlFor={v} className="pri-lbl">{lbl}</label>
+                            <input type="checkbox" id={v} className="pri-check" checked={pris.includes(v)} onChange={()=>togglePri(v)} />
+                            <label htmlFor={v} className="pri-label">{lbl}</label>
                         </React.Fragment>
                     ))}
                 </div>
 
-                <label className="lbl">販売価格（円）</label>
+                <label className="label">販売価格（円）</label>
                 <input type="number" inputMode="numeric" value={price}
                     onChange={e=>setPrice(e.target.value)} onFocus={e=>e.target.select()} />
                 <input type="range" className="price-slider" min={SMIN} max={SMAX} step="100"
@@ -429,14 +502,14 @@ function App() {
                     onChange={e=>setPrice(e.target.value)} />
                 <div className="slider-ends"><span>¥100</span><span>¥12,500</span><span>¥25,000</span></div>
 
-                <div className="g2">
+                <div className="grid-2">
                     <div>
-                        <label className="lbl">原価（円）</label>
+                        <label className="label">原価（円）</label>
                         <input type="number" inputMode="numeric" value={iCost}
                             onChange={e=>setICost(e.target.value)} onFocus={e=>e.target.select()} />
                     </div>
                     <div>
-                        <label className="lbl">梱包資材費（円）</label>
+                        <label className="label">資材費（円）</label>
                         <input type="number" inputMode="numeric" value={pCost}
                             onChange={e=>setPCost(e.target.value)} onFocus={e=>e.target.select()} />
                     </div>
@@ -450,14 +523,14 @@ function App() {
 
                 {mode==='detail' ? (
                     <div className={flash?'flash':''}>
-                        <label className="lbl">商品サイズ（縦 / 横 / 厚さ cm）</label>
-                        <div className="g3">
+                        <label className="label">サイズ（縦 / 横 / 厚さ cm）</label>
+                        <div className="size-inputs">
                             <input type="number" inputMode="decimal" placeholder="縦"   value={dims.h} onChange={e=>setDims({...dims,h:e.target.value})} />
                             <input type="number" inputMode="decimal" placeholder="横"   value={dims.w} onChange={e=>setDims({...dims,w:e.target.value})} />
                             <input type="number" inputMode="decimal" placeholder="厚さ" value={dims.t} onChange={e=>setDims({...dims,t:e.target.value})} />
                         </div>
-                        <label className="lbl">重さ（g）</label>
-                        <input type="number" inputMode="numeric" value={weight}
+                        <label className="label">重さ（g）</label>
+                        <input type="number" inputMode="numeric" placeholder="重さ(g)" value={weight}
                             onChange={e=>setWeight(e.target.value)} onFocus={e=>e.target.select()} />
                     </div>
                 ) : (
@@ -480,86 +553,84 @@ function App() {
                 )}
             </div>
 
-            {/* ── 結果カード ────────────────────────── */}
+            {/* ── 結果カード ── */}
             <div className="card">
                 <div className="result-box">
-                    <div style={{fontSize:'0.78rem',color:'#bbb'}}>最終純利益</div>
-                    <div className="profit-val" style={{color:(res.profit||0)<0?'#e57373':'var(--pink)'}}>
+                    <div style={{fontSize:'0.8rem'}}>最終純利益</div>
+                    <div className="profit-val" style={{color:(res.profit||0)<0?'#e57373':'var(--main-pink)'}}>
                         {(res.profit||0)<0?'-':''}¥{Math.abs(res.profit||0).toLocaleString()}
                     </div>
                     <span className="rate-badge" style={{background:rateBg(res.rate),color:rateColor(res.rate)}}>
                         利益率 {res.rate}%
                     </span>
-                    {(res.profit||0)<0 && (
-                        <div style={{fontSize:'0.72rem',color:'#e57373',marginTop:'6px'}}>
-                            ⚠️ 赤字です。価格・原価を見直してください
-                        </div>
-                    )}
-                    {m && (m.url
-                        ? <a href={m.url} target="_blank" rel="noopener noreferrer" className="method-link">{m.name} ➔</a>
-                        : <div style={{marginTop:'10px',fontWeight:'bold',color:'var(--pink)'}}>{m.name}</div>
-                    )}
+                    {m && <div className="method-badge" style={{marginLeft:'4px'}}>{m.name}</div>}
+                    {(res.profit||0)<0 && <div className="approx-note">⚠️ 赤字です。価格・原価を見直してください</div>}
                 </div>
 
-                {m && <div className="spec-card"><strong>📦 配送ガイド</strong><br/>{m.info}</div>}
-
-                {/* 利益内訳 */}
-                <div className="breakdown">
-                    <div className="bd-row income"><span>販売価格</span><span>+¥{p.toLocaleString()}</span></div>
-                    <div className="bd-row deduct"><span>販売手数料（{res.feeLabel}）</span><span>-¥{res.feeCeil.toLocaleString()}</span></div>
-                    {m && <>
-                        <div className="bd-row deduct"><span>送料</span><span>-¥{m.shipping.toLocaleString()}</span></div>
-                        {m.material>0 && <div className="bd-row sub"><span>└ 配送資材（{m.materialNote}）</span><span>-¥{m.material}</span></div>}
-                    </>}
-                    {ic>0 && <div className="bd-row neutral"><span>原価</span><span>-¥{ic.toLocaleString()}</span></div>}
-                    {pc>0 && <div className="bd-row neutral"><span>梱包資材費</span><span>-¥{pc.toLocaleString()}</span></div>}
-                    <hr className="bd-divider"/>
-                    <div className="bd-row total">
-                        <span>純利益</span>
-                        <span style={{color:(res.profit||0)<0?'#e57373':'var(--pink)'}}>
-                            {(res.profit||0)<0?'-':''}¥{Math.abs(res.profit||0).toLocaleString()}
-                        </span>
-                    </div>
-                </div>
-
-                {/* 配送候補 */}
-                {res.avail.length>1 && (
-                    <div className="cand-list">
-                        <div className="lbl">配送候補（安い順）</div>
-                        {res.avail.slice(0,5).map((c,i)=>(
-                            <div key={i} className={`cand-item ${i===0?'best':'other'}`}>
-                                <span style={{flex:1}}>{i===0?'⭐ ':''}{c.name}</span>
-                                <div className="cand-cost">
-                                    <div>¥{c.cost.toLocaleString()}</div>
-                                    {c.material>0 && <div className="cand-cost-sub">送料¥{c.shipping}+{c.materialNote}¥{c.material}</div>}
-                                </div>
-                            </div>
-                        ))}
+                {m && (
+                    <div className="spec-card">
+                        <strong>📦 配送ガイド</strong><br/>
+                        {m.info}
+                        {m.material>0 && (
+                            <span> ／ 配送資材({m.materialNote})¥{m.material}が別途必要</span>
+                        )}
                     </div>
                 )}
 
-                {/* ボタン2つ（分離） */}
+                {/* 利益UPのヒント */}
+                {hints.length>0 && (
+                    <div className="if-card">
+                        <strong>💡 利益UPのヒント</strong>
+                        {hints.map((text,i)=><div key={i} className="if-item">{text}</div>)}
+                    </div>
+                )}
+
+                {/* 利益内訳 */}
+                <div className="detail-table">
+                    <div className="detail-row">
+                        <span>販売価格</span><span>¥{p.toLocaleString()}</span>
+                    </div>
+                    <div className="detail-row" style={{color:'#e57373'}}>
+                        <span>販売手数料 <span className="formula">{res.feeFormula}</span></span>
+                        <span>- ¥{res.feeCeil.toLocaleString()}</span>
+                    </div>
+                    {m && <>
+                        <div className="detail-row" style={{color:'#e57373'}}>
+                            <span>送料</span><span>- ¥{m.shipping.toLocaleString()}</span>
+                        </div>
+                        {m.material>0 && (
+                            <div className="detail-sub" style={{color:'#bbb'}}>
+                                <span>└ 配送資材（{m.materialNote}）</span><span>- ¥{m.material}</span>
+                            </div>
+                        )}
+                    </>}
+                    <div className="detail-row" style={{color:'#888'}}>
+                        <span>コスト計（原価・資材費）</span>
+                        <span>- ¥{(ic+pc).toLocaleString()}</span>
+                    </div>
+                </div>
+
                 <div className="btn-row">
                     <button className="btn-copy" onClick={onCopy}>📋 結果をコピー</button>
                     <button className="btn-save" onClick={saveHist}>🕐 履歴に保存</button>
                 </div>
             </div>
 
-            {/* ── 全サイト比較カード ────────────────── */}
+            {/* ── 全サイト比較カード ── */}
             <div className="card">
-                <div className="lbl" style={{marginBottom:'4px'}}>🏆 全サイト比較</div>
+                <div className="label" style={{marginBottom:'4px'}}>🏆 全サイト比較</div>
                 <div className="cmp-hint">タップで選択サイトを切り替え。ラクマ・BASEは通常手数料で比較。</div>
                 <div className="cmp-grid">
                     {cmp.map(({site:s,r})=>{
                         const isBest    = bestSite && bestSite.site===s;
-                        const isCurrent = s===site;
+                        const isCurrent = s===site || (s==='メルカリ' && site==='メルカリショップス');
                         const pVal      = r.profit;
                         return (
                             <div key={s}
                                 className={`cmp-cell ${isBest?'is-best':''} ${isCurrent?'is-current':''}`}
                                 onClick={()=>{ setSite(s); setFeeRate(DEF_FEE[s]); }}>
                                 <div className="cmp-site">{s}</div>
-                                <div className="cmp-profit" style={{color:pVal===null?'#ccc':pVal<0?'#e57373':isBest?'var(--pink)':'#777'}}>
+                                <div className="cmp-profit" style={{color:pVal===null?'#ccc':pVal<0?'#e57373':isBest?'var(--main-pink)':'#777'}}>
                                     {pVal===null?'—':(pVal<0?'-':'')+'¥'+Math.abs(pVal).toLocaleString()}
                                 </div>
                                 <div className="cmp-rate" style={{color:rateColor(r.rate)}}>
@@ -574,11 +645,11 @@ function App() {
                 </div>
             </div>
 
-            {/* ── 計算履歴カード ────────────────────── */}
+            {/* ── 計算履歴カード ── */}
             {hist.length>0 && (
                 <div className="card">
                     <div className="hist-header">
-                        <span className="lbl" style={{margin:0}}>🕐 計算履歴（直近{hist.length}件）</span>
+                        <span className="label" style={{margin:0}}>🕐 計算履歴（直近{hist.length}件）</span>
                         <button className="clear-btn" onClick={()=>{ if(window.confirm('履歴を削除しますか？')) setHist([]); }}>🗑 履歴を削除</button>
                     </div>
                     <div className="hist-hint">タップすると入力値を復元できます</div>
@@ -587,7 +658,7 @@ function App() {
                             <div className="hist-meta">{e.date} · {e.site}</div>
                             <div className="hist-main">
                                 ¥{Number(e.price).toLocaleString()} →{' '}
-                                <strong style={{color:e.profit<0?'#e57373':'var(--pink)'}}>
+                                <strong style={{color:e.profit<0?'#e57373':'var(--main-pink)'}}>
                                     ¥{Number(e.profit).toLocaleString()}
                                 </strong>
                                 <span className="hist-rate">({e.rate}%)</span>
@@ -605,5 +676,7 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
+
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "211602fb15164c60acea4a97cc828044"}'></script>
 </body>
 </html>
