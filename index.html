@@ -3,181 +3,535 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>送料ナビ Pro | フルスペック版</title>
+    <title>送料ナビ Pro</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        :root { --main-pink: #f06292; --sub-pink: #fce4ec; --accent-green: #4caf50; --accent-orange: #ff9800; --text-main: #5d4037; --bg-soft: #fffafb; }
-        body { font-family: sans-serif; background: var(--bg-soft); color: var(--text-main); margin: 0; padding: 10px; }
+        :root { --main-pink: #f06292; --sub-pink: #fce4ec; --accent-green: #4caf50; --text-main: #5d4037; --bg-soft: #fffafb; }
+        * { box-sizing: border-box; }
+        body { font-family: sans-serif; background: var(--bg-soft); color: var(--text-main); margin: 0; padding: 10px; font-size: 14px; }
         .container { max-width: 500px; margin: 0 auto; }
         .card { background: white; border-radius: 18px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid var(--sub-pink); margin-bottom: 12px; }
-        .label { font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; display: block; }
-        select, input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #eee; font-size: 1rem; margin-bottom: 12px; box-sizing: border-box; background: white; outline: none; }
-        
+        .label { font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; display: block; color: #777; }
+        select, input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #eee; font-size: 1rem; margin-bottom: 12px; background: white; outline: none; }
         .priority-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
         .pri-check { display: none; }
-        .pri-label { padding: 10px 5px; border-radius: 10px; border: 1px solid #eee; background: white; text-align: center; font-size: 0.75rem; cursor: pointer; color: #888; transition: 0.2s; }
+        .pri-label { padding: 10px 5px; border-radius: 10px; border: 1px solid #eee; background: white; text-align: center; font-size: 0.75rem; cursor: pointer; color: #888; transition: 0.2s; display: block; }
         .pri-check:checked + .pri-label { background: var(--main-pink); color: white; border-color: var(--main-pink); font-weight: bold; }
-
         .result-box { background: #fff0f3; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 10px; }
-        .profit-val { font-size: 2.2rem; font-weight: bold; color: var(--main-pink); }
-        .method-badge { display: inline-block; background: var(--accent-green); color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; margin-top: 5px;}
-        
-        .spec-card { background: #e3f2fd; border: 1px solid #bbdefb; border-radius: 12px; padding: 10px; font-size: 0.75rem; color: #1565c0; margin-top: 10px; line-height: 1.5; }
-        .if-card { background: #fff3e0; border: 1px solid #ffe0b2; border-radius: 12px; padding: 10px; font-size: 0.75rem; color: #e65100; margin-top: 10px; }
-        .if-item { margin-top: 5px; padding-left: 10px; border-left: 2px solid var(--accent-orange); }
+        .profit-val { font-size: 2.4rem; font-weight: bold; }
+        .method-link { display: inline-block; background: var(--accent-green); color: white !important; padding: 10px 20px; border-radius: 25px; font-size: 0.9rem; margin-top: 10px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 10px rgba(76,175,80,0.3); }
+        .spec-card { background: #e3f2fd; border: 1px solid #bbdefb; border-radius: 12px; padding: 10px; font-size: 0.75rem; color: #1565c0; margin-top: 10px; line-height: 1.6; }
+        .estimate-badge { display: inline-block; background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; border-radius: 6px; font-size: 0.65rem; padding: 1px 5px; margin-left: 5px; vertical-align: middle; font-weight: bold; }
 
-        .detail-table { width: 100%; font-size: 0.8rem; border-top: 1px dashed #ddd; margin-top: 10px; padding-top: 10px; }
-        .detail-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .formula { font-size: 0.65rem; color: #999; display: block; margin-top: 1px; }
-        .approx-note { font-size: 0.65rem; color: #f44336; margin-top: 2px; }
+        /* 利益内訳 */
+        .breakdown { border-top: 1px dashed #f0dde2; margin-top: 12px; padding-top: 10px; }
+        .bd-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.8rem; padding: 3px 0; }
+        .bd-row.income { color: var(--accent-green); font-weight: bold; }
+        .bd-row.deduct { color: #e57373; }
+        .bd-row.sub    { color: #bbb; font-size: 0.75rem; padding-left: 10px; }
+        .bd-divider { border: none; border-top: 1px solid #f5e0e5; margin: 6px 0; }
+        .bd-row.total { color: var(--main-pink); font-weight: bold; font-size: 0.9rem; }
+
+        /* 比較リスト */
+        .compare-list { margin-top: 14px; border-top: 1px solid #f5e0e5; padding-top: 10px; }
+        .compare-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 6px 0; border-bottom: 1px solid #fafafa; gap: 6px; }
+        .compare-item.best { color: var(--main-pink); font-weight: bold; }
+        .compare-item.other { color: #aaa; }
+        .compare-cost { text-align: right; white-space: nowrap; }
+        .compare-cost-sub { font-size: 0.65rem; color: #ccc; }
+
+        .copy-btn { width: 100%; background: #f5f5f5; border: none; padding: 10px; border-radius: 10px; font-size: 0.8rem; color: #666; margin-top: 10px; cursor: pointer; }
         .size-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        h1 { font-size: 1.2rem; text-align: center; color: var(--main-pink); margin: 10px 0; }
+        h1 { font-size: 1.2rem; text-align: center; color: var(--main-pink); margin: 10px 0 15px; }
+        .note { font-size: 0.65rem; color: #ccc; text-align: center; padding-bottom: 12px; }
     </style>
 </head>
 <body>
     <div id="root" class="container"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
 
         function App() {
-            const [site, setSite] = useState('メルカリ');
-            const [priorities, setPriorities] = useState(['anon']);
-            const [price, setPrice] = useState('2500');
-            const [itemCost, setItemCost] = useState('500');
-            const [packingCost, setPackingCost] = useState('50');
-            const [weight, setWeight] = useState('100');
-            const [dims, setDims] = useState({ w: '20', h: '25', t: '2.5' });
-
-            const togglePriority = (val) => {
-                setPriorities(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
+            const getSaved = (key, def) => {
+                const s = localStorage.getItem(key);
+                if (s === null) return def;
+                try { return JSON.parse(s); } catch { return def; }
             };
 
+            const [site,        setSite]        = useState(() => getSaved('sn_site',  'メルカリ'));
+            const [feeRate,     setFeeRate]     = useState(() => getSaved('sn_fee',   '10'));
+            const [priorities,  setPriorities]  = useState(() => getSaved('sn_pri',   ['anon']));
+            const [price,       setPrice]       = useState(() => getSaved('sn_price', '2500'));
+            const [itemCost,    setItemCost]    = useState(() => getSaved('sn_ic',    '500'));
+            const [packingCost, setPackingCost] = useState(() => getSaved('sn_pc',    '50'));
+            const [weight,      setWeight]      = useState(() => getSaved('sn_w',     '100'));
+            const [dims,        setDims]        = useState(() => getSaved('sn_dims',  { h:'21', w:'16', t:'2.5' }));
+
+            useEffect(() => {
+                localStorage.setItem('sn_site',  JSON.stringify(site));
+                localStorage.setItem('sn_fee',   JSON.stringify(feeRate));
+                localStorage.setItem('sn_pri',   JSON.stringify(priorities));
+                localStorage.setItem('sn_price', JSON.stringify(price));
+                localStorage.setItem('sn_ic',    JSON.stringify(itemCost));
+                localStorage.setItem('sn_pc',    JSON.stringify(packingCost));
+                localStorage.setItem('sn_w',     JSON.stringify(weight));
+                localStorage.setItem('sn_dims',  JSON.stringify(dims));
+            }, [site, feeRate, priorities, price, itemCost, packingCost, weight, dims]);
+
+            const togglePriority = (val) =>
+                setPriorities(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
+
             const calculate = () => {
-                const p = Number(price) || 0;
-                const dw = Number(dims.w) || 0;
-                const dh = Number(dims.h) || 0;
-                const dt = Number(dims.t) || 0;
-                const w = Number(weight) || 0;
+                const p  = Number(price)    || 0;
+                const dh = Number(dims.h)   || 0;
+                const dw = Number(dims.w)   || 0;
+                const dt = Number(dims.t)   || 0;
+                const wg = Number(weight)   || 0;
                 const ic = Number(itemCost) || 0;
                 const pc = Number(packingCost) || 0;
+                const ds = dh + dw + dt;
 
-                let fee = 0, feeFormula = "";
+                // ── 手数料 ──────────────────────────────────────────────
+                let fee, feeLabel;
                 if (site === 'BASE') {
-                    fee = (p * 0.066) + 40;
-                    feeFormula = "販売価格 × 6.6% + 40円";
+                    if (feeRate === '2.9') { fee = p * 0.029;         feeLabel = '2.9%（グロース）'; }
+                    else                   { fee = p * 0.066 + 40;    feeLabel = '6.6%+40円（通常）'; }
                 } else if (site === 'ラクマ') {
-                    fee = p * 0.10;
-                    feeFormula = "販売価格 × 10%";
+                    fee = p * (Number(feeRate) / 100);
+                    feeLabel = feeRate + '%';
                 } else {
                     fee = p * 0.10;
-                    feeFormula = "販売価格 × 10%";
+                    feeLabel = '10%';
                 }
-                
+
+                // ── 定形外・規格内 重量別料金 ────────────────────────────
+                const teikei =
+                    wg <=  50 ? 140 :
+                    wg <= 100 ? 180 :
+                    wg <= 150 ? 270 :
+                    wg <= 250 ? 320 :
+                    wg <= 500 ? 510 :
+                    wg <=1000 ? 750 : null;
+
+                const RU = 'https://fril.jp/ts/kantanrakumapack/';
+                const MY = 'https://jp-news.mercari.com/more/yuyu-mercari';
+                const MR = 'https://jp-news.mercari.com/more/rakuraku-mercari';
+
+                // ── 配送方法リスト ───────────────────────────────────────
+                // shipping : 送料のみ
+                // material : 資材代（専用封筒・シール・箱など）
+                // estimate : true → 概算表示
+                // cost     : 合計（ソート・計算用）= shipping + material
                 const methods = [
-                    { name: "定形外(50g)", cost: 120, anon: false, trace: false, conv: false, info: "❌匿名不可 / ❌追跡なし / 切手発送OK", isApprox: false, size: w<=50 && dt<=3 && dw<=34 && dh<=25 },
-                    { name: "定形外(100g)", cost: 140, anon: false, trace: false, conv: false, info: "❌匿名不可 / ❌追跡なし / 切手発送OK", isApprox: false, size: w<=100 && dt<=3 && dw<=34 && dh<=25 },
-                    { name: "クリックポスト", cost: 185, anon: false, trace: true, conv: false, info: "❌匿名不可 / ✅追跡あり / 要ラベル印刷", isApprox: false, size: dt<=3 && dw<=34 && dh<=25 },
-                    { name: "らくらくメルカリ便(ネコポス)", cost: 210, anon: true, trace: true, conv: true, info: "✅匿名配送 / ✅専用資材不要 / セブン,ファミマOK", isApprox: false, size: dt<=3 && dw<=31 && dh<=22.6, platform: ['メルカリ', 'メルカリショップス'] },
-                    { name: "ゆうゆうメルカリ便(ゆうパケット)", cost: 230, anon: true, trace: true, conv: true, info: "✅匿名配送 / ✅専用資材不要 / ローソン,郵便局OK", isApprox: false, size: dt<=3 && dw+dh+dt<=60, platform: ['メルカリ', 'メルカリショップス'] },
-                    { name: "かんたんラクマパック(ネコポス)", cost: 200, anon: true, trace: true, conv: true, info: "✅匿名配送 / ✅専用資材不要", isApprox: false, size: dt<=3, platform: ['ラクマ'] },
-                    { name: "かんたん発送(BASE)", cost: 260, anon: true, trace: true, conv: true, info: "✅匿名配送(ヤマト連携) / ✅専用資材不要", isApprox: false, size: dt<=3, platform: ['BASE'] },
-                    { name: "宅急便 60サイズ(概算)", cost: 750, anon: true, trace: true, conv: true, info: "✅匿名可(設定による) / ✅追跡あり", isApprox: true, size: true }
+
+                    // ── 共通 ──
+                    { name: '定形外・規格内',
+                      shipping: teikei, material: 0, cost: teikei,
+                      anon: false, trace: false, url: null,
+                      info: '❌匿名不可 / ❌追跡なし / 重量で変動 / A4・3cm',
+                      size: teikei !== null && dt <= 3 && dh <= 34 && dw <= 25 },
+
+                    { name: 'スマートレター',
+                      shipping: 210, material: 0, cost: 210,
+                      anon: false, trace: false, url: null,
+                      info: '❌匿名不可 / ❌追跡なし / A5サイズ・2cm',
+                      size: dt <= 2 && dh <= 25 && dw <= 17 && wg <= 1000 },
+
+                    { name: 'クリックポスト',
+                      shipping: 185, material: 0, cost: 185,
+                      anon: false, trace: true, url: 'https://clickpost.jp/',
+                      info: '❌匿名不可 / ✅追跡あり / A4・3cm・1kg',
+                      size: dt <= 3 && dh <= 34 && dw <= 25 && wg <= 1000 },
+
+                    { name: 'こねこ便420',
+                      shipping: 420, material: 0, cost: 420,
+                      anon: false, trace: true, url: null,
+                      info: '❌匿名不可 / ✅追跡あり / A4・3cm（東京都限定資材）',
+                      size: dt <= 3 && dh <= 34 && dw <= 24.8 },
+
+                    { name: 'レターパックライト',
+                      shipping: 430, material: 0, cost: 430,
+                      anon: false, trace: true, url: null,
+                      info: '❌匿名不可 / ✅追跡あり / A4・3cm・4kg / 郵便受け',
+                      size: dt <= 3 && dh <= 34 && dw <= 24.8 && wg <= 4000 },
+
+                    { name: 'レターパックプラス',
+                      shipping: 600, material: 0, cost: 600,
+                      anon: false, trace: true, url: null,
+                      info: '❌匿名不可 / ✅追跡あり / 厚さ制限なし / 対面受取',
+                      size: dh <= 34 && dw <= 24.8 && wg <= 4000 },
+
+                    // ── ラクマ専用 ──
+                    { name: 'ラクマパック(ポストmini)',
+                      shipping: 150, material: 20, cost: 170,
+                      materialNote: '専用封筒',
+                      anon: true, trace: true, url: RU,
+                      info: '✅匿名 / 専用封筒必要 / A5・3cm・2kg',
+                      size: dt <= 3 && dh <= 21.1 && dw <= 16.5 && wg <= 2000,
+                      platform: ['ラクマ'] },
+
+                    { name: 'ラクマパック(ゆうパケットポスト)',
+                      shipping: 175, material: 5, cost: 180,
+                      materialNote: '専用シール(最安)',
+                      anon: true, trace: true, url: RU,
+                      info: '✅匿名 / 専用シール必要 / 3辺60cm・A4・3cm・2kg',
+                      size: ds <= 60 && dh <= 34 && dt <= 3 && wg <= 2000,
+                      platform: ['ラクマ'] },
+
+                    { name: 'ラクマパック(ゆうパケット)',
+                      shipping: 200, material: 0, cost: 200,
+                      anon: true, trace: true, url: RU,
+                      info: '✅匿名 / 資材不要 / 3辺60cm・A4・3cm・1kg',
+                      size: ds <= 60 && dh <= 34 && dt <= 3 && wg <= 1000,
+                      platform: ['ラクマ'] },
+
+                    { name: 'ラクマパック(ネコポス)',
+                      shipping: 200, material: 0, cost: 200,
+                      anon: true, trace: true, url: RU,
+                      info: '✅匿名 / 最短翌日 / 3辺60cm・A4・3cm・1kg',
+                      size: ds <= 60 && dh <= 34 && dt <= 3 && wg <= 1000,
+                      platform: ['ラクマ'] },
+
+                    { name: 'ラクマパック(ゆうパケットプラス)',
+                      shipping: 380, material: 65, cost: 445,
+                      materialNote: '専用箱',
+                      anon: true, trace: true, url: RU,
+                      info: '✅匿名 / 専用箱必要 / 24×17cm・7cm・2kg',
+                      size: dt <= 7 && dh <= 24 && dw <= 17 && wg <= 2000,
+                      platform: ['ラクマ'] },
+
+                    { name: 'ラクマパック(宅急便コンパクト)',
+                      shipping: 430, material: 70, cost: 500,
+                      materialNote: '専用BOX',
+                      anon: true, trace: true, url: RU,
+                      info: '✅匿名 / 専用BOX必要 / 25×20cm・5cm',
+                      size: dt <= 5 && dh <= 25 && dw <= 20,
+                      platform: ['ラクマ'] },
+
+                    { name: 'ラクマパック(宅急便60)',
+                      shipping: 650, material: 0, cost: 650,
+                      anon: true, trace: true, url: RU,
+                      info: '✅匿名 / ヤマト運輸 / 60サイズ・2kg',
+                      size: true, platform: ['ラクマ'] },
+
+                    { name: 'ラクマパック(ゆうパック60)',
+                      shipping: 700, material: 0, cost: 700,
+                      anon: true, trace: true, url: RU,
+                      info: '✅匿名 / 日本郵便 / 60サイズ・25kg',
+                      size: true, platform: ['ラクマ'] },
+
+                    // ── メルカリ専用 ──
+                    { name: 'メルカリ便(ポストmini)',
+                      shipping: 160, material: 20, cost: 180,
+                      materialNote: '専用封筒',
+                      anon: true, trace: true, url: MY,
+                      info: '✅匿名 / 専用封筒必要 / A5・3cm',
+                      size: dt <= 3 && dh <= 21.1 && dw <= 16.5,
+                      platform: ['メルカリ'] },
+
+                    { name: 'メルカリ便(ゆうパケットポスト)',
+                      shipping: 215, material: 5, cost: 220,
+                      materialNote: '専用シール',
+                      anon: true, trace: true, url: MY,
+                      info: '✅匿名 / 専用シール必要 / 3辺60cm・A4・ポスト投函',
+                      size: ds <= 60 && dh <= 34,
+                      platform: ['メルカリ'] },
+
+                    { name: 'メルカリ便(ゆうパケット)',
+                      shipping: 230, material: 0, cost: 230,
+                      anon: true, trace: true, url: MY,
+                      info: '✅匿名 / 資材不要 / A4・3cm・1kg',
+                      size: dh <= 34 && dw <= 23 && dt <= 3 && wg <= 1000,
+                      platform: ['メルカリ'] },
+
+                    { name: 'メルカリ便(ネコポス)',
+                      shipping: 210, material: 0, cost: 210,
+                      anon: true, trace: true, url: MR,
+                      info: '✅匿名 / 最短翌日 / 3辺60cm・A4・3cm・1kg',
+                      size: ds <= 60 && dh <= 34 && wg <= 1000,
+                      platform: ['メルカリ'] },
+
+                    { name: 'メルカリ便(ゆうパケットプラス)',
+                      shipping: 455, material: 65, cost: 520,
+                      materialNote: '専用箱',
+                      anon: true, trace: true, url: MY,
+                      info: '✅匿名 / 専用箱必要 / 24×17cm・7cm',
+                      size: dt <= 7 && dh <= 24 && dw <= 17,
+                      platform: ['メルカリ'] },
+
+                    { name: 'メルカリ便(宅急便コンパクト)',
+                      shipping: 450, material: 70, cost: 520,
+                      materialNote: '専用BOX',
+                      anon: true, trace: true, url: MR,
+                      info: '✅匿名 / 専用BOX必要 / 25×20cm・5cm',
+                      size: dt <= 5 && dh <= 25 && dw <= 20,
+                      platform: ['メルカリ'] },
+
+                    { name: 'メルカリ便(宅急便60)',
+                      shipping: 750, material: 0, cost: 750,
+                      anon: true, trace: true, url: MR,
+                      info: '✅匿名 / ヤマト運輸 / 60サイズ',
+                      size: true, platform: ['メルカリ'] },
+
+                    // ── BASE専用（ヤマト運輸連携・確定料金）──
+                    { name: 'BASEネコポス',
+                      shipping: 290, material: 0, cost: 290,
+                      anon: true, trace: true, url: 'https://baseu.jp/39033',
+                      info: '✅匿名+¥60 / 資材不要 / 3辺60cm・長辺34cm・厚さ3cm・1kg / ポスト投函',
+                      size: ds <= 60 && dh <= 34 && dt <= 3 && wg <= 1000,
+                      platform: ['BASE'] },
+
+                    { name: 'BASE宅急便コンパクト',
+                      shipping: 500, material: 70, cost: 570,
+                      materialNote: '専用BOX',
+                      anon: true, trace: true, url: 'https://baseu.jp/39033',
+                      info: '✅匿名+¥60 / 専用BOX¥70別途 / 25×20×5cm または薄型34×24.8cm',
+                      size: (dt <= 5 && dh <= 25 && dw <= 20) || (dh <= 34 && dw <= 24.8),
+                      platform: ['BASE'] },
+
+                    { name: 'BASE宅急便60',
+                      shipping: 760, material: 0, cost: 760,
+                      anon: true, trace: true, url: 'https://baseu.jp/39033',
+                      info: '✅匿名+¥60 / 資材不要 / 3辺60cm以内・2kg',
+                      size: ds <= 60 && wg <= 2000,
+                      platform: ['BASE'] },
+
+                    { name: 'BASE宅急便80',
+                      shipping: 1030, material: 0, cost: 1030,
+                      anon: true, trace: true, url: 'https://baseu.jp/39033',
+                      info: '✅匿名+¥60 / 資材不要 / 3辺80cm以内・5kg',
+                      size: ds <= 80 && wg <= 5000,
+                      platform: ['BASE'] },
                 ];
 
+                // フィルター・ソート
                 let available = methods.filter(m => m.size && (!m.platform || m.platform.includes(site)));
-                if (priorities.includes('anon')) available = available.filter(m => m.anon);
+                if (priorities.includes('anon'))  available = available.filter(m => m.anon);
                 if (priorities.includes('trace')) available = available.filter(m => m.trace);
-                if (priorities.includes('conv')) available = available.filter(m => m.conv);
+                available.sort((a, b) => a.cost - b.cost);
 
-                const selected = available.length > 0 ? available.sort((a,b) => a.cost - b.cost)[0] : methods.sort((a,b) => a.cost - b.cost)[0];
+                const sel = available.length > 0
+                    ? available[0]
+                    : methods.find(m => m.name.includes('60') && (!m.platform || m.platform.includes(site)));
 
-                let ifSuggestions = [];
-                if (dt > 3) ifSuggestions.push(`厚みを3cm以内にできれば、送料が劇的に下がり利益がUPします！`);
-                if (priorities.includes('anon') && selected.cost > 185) ifSuggestions.push(`「匿名なし」でもよければ、クリックポスト(¥185)等でさらに利益が残ります。`);
+                const feeCeil = Math.ceil(fee);
+                const profit  = Math.floor(p - feeCeil - sel.cost - ic - pc);
 
-                const totalExpense = fee + selected.cost + ic + pc;
-                return { 
-                    profit: Math.floor(p - totalExpense), 
-                    fee: Math.floor(fee), 
-                    feeFormula,
-                    shipping: selected.cost, 
-                    methodName: selected.name,
-                    methodInfo: selected.info,
-                    isApprox: selected.isApprox,
-                    ifSuggestions
-                };
+                return { sel, available, profit, feeCeil, feeLabel, p, ic, pc };
             };
 
             const res = calculate();
 
+            const copyResult = () => {
+                const m = res.sel;
+                const mat = m.material > 0 ? `\n  うち資材費 (${m.materialNote}): ¥${m.material}` : '';
+                const est = m.estimate ? '（概算）' : '';
+                const t = [
+                    '【送料ナビ Pro 計算結果】',
+                    `サイト: ${site}`,
+                    `販売価格: ¥${price}`,
+                    `手数料 (${res.feeLabel}): -¥${res.feeCeil}`,
+                    `送料 (${m.name})${est}: -¥${m.shipping}${mat}`,
+                    `原価: -¥${itemCost}`,
+                    `資材費（梱包）: -¥${packingCost}`,
+                    `純利益: ¥${res.profit}`,
+                ].join('\n');
+                navigator.clipboard.writeText(t);
+                alert('コピーしました！');
+            };
+
+            const m = res.sel;
+
             return (
                 <div>
-                    <h1>送料ナビ Pro</h1>
+                    <h1>🚀 送料ナビ Pro</h1>
+
+                    {/* ── 入力カード ── */}
                     <div className="card">
-                        <label className="label">販売サイト</label>
-                        <select value={site} onChange={(e) => setSite(e.target.value)}>
-                            <option value="メルカリ">メルカリ</option>
-                            <option value="メルカリショップス">メルカリショップス</option>
-                            <option value="BASE">BASE</option>
-                            <option value="ラクマ">ラクマ</option>
-                        </select>
-
-                        <label className="label">こだわり（複数選択可）</label>
-                        <div className="priority-grid">
-                            <input type="checkbox" id="anon" className="pri-check" checked={priorities.includes('anon')} onChange={() => togglePriority('anon')} />
-                            <label htmlFor="anon" className="pri-label">匿名発送</label>
-                            <input type="checkbox" id="trace" className="pri-check" checked={priorities.includes('trace')} onChange={() => togglePriority('trace')} />
-                            <label htmlFor="trace" className="pri-label">追跡あり</label>
-                            <input type="checkbox" id="conv" className="pri-check" checked={priorities.includes('conv')} onChange={() => togglePriority('conv')} />
-                            <label htmlFor="conv" className="pri-label">コンビニ/ポスト</label>
-                        </div>
-
-                        <label className="label">価格設定 (円)</label>
-                        <input type="text" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} onFocus={(e) => e.target.select()} />
                         <div className="grid-2">
-                            <div><label className="label">原価</label><input type="text" value={itemCost} onChange={(e) => setItemCost(e.target.value)} onFocus={(e) => e.target.select()} /></div>
-                            <div><label className="label">資材費</label><input type="text" value={packingCost} onChange={(e) => setPackingCost(e.target.value)} onFocus={(e) => e.target.select()} /></div>
+                            <div>
+                                <label className="label">販売サイト</label>
+                                <select value={site} onChange={(e) => {
+                                    const s = e.target.value;
+                                    setSite(s);
+                                    setFeeRate(s === 'BASE' ? '6.6' : '10');
+                                }}>
+                                    <option value="メルカリ">メルカリ</option>
+                                    <option value="ラクマ">ラクマ</option>
+                                    <option value="BASE">BASE</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="label">手数料率</label>
+                                {site === 'BASE' ? (
+                                    <select value={feeRate} onChange={(e) => setFeeRate(e.target.value)}>
+                                        <option value="6.6">通常 (6.6%+40円)</option>
+                                        <option value="2.9">グロース (2.9%)</option>
+                                    </select>
+                                ) : site === 'ラクマ' ? (
+                                    <select value={feeRate} onChange={(e) => setFeeRate(e.target.value)}>
+                                        <option value="10">10%（通常）</option>
+                                        <option value="6">6%（中級）</option>
+                                        <option value="4.5">4.5%（上級）</option>
+                                    </select>
+                                ) : (
+                                    <input type="text" value="10%（固定）" disabled />
+                                )}
+                            </div>
                         </div>
 
-                        <label className="label">サイズ・重さ (cm/g)</label>
-                        <div className="size-inputs">
-                            <input type="text" placeholder="幅" value={dims.w} onChange={(e) => setDims({...dims, w: e.target.value})} />
-                            <input type="text" placeholder="高" value={dims.h} onChange={(e) => setDims({...dims, h: e.target.value})} />
-                            <input type="text" placeholder="厚" value={dims.t} onChange={(e) => setDims({...dims, t: e.target.value})} />
+                        <label className="label">こだわり</label>
+                        <div className="priority-grid">
+                            {[['anon','📦 匿名発送'],['trace','🔍 追跡あり']].map(([v, label]) => (
+                                <React.Fragment key={v}>
+                                    <input type="checkbox" id={v} className="pri-check"
+                                        checked={priorities.includes(v)}
+                                        onChange={() => togglePriority(v)} />
+                                    <label htmlFor={v} className="pri-label">{label}</label>
+                                </React.Fragment>
+                            ))}
                         </div>
-                        <input type="text" placeholder="重さ(g)" value={weight} onChange={(e) => setWeight(e.target.value)} onFocus={(e) => e.target.select()} />
+
+                        <label className="label">販売価格（円）</label>
+                        <input type="number" inputMode="numeric" value={price}
+                            onChange={(e) => setPrice(e.target.value)} onFocus={(e) => e.target.select()} />
+
+                        <div className="grid-2">
+                            <div>
+                                <label className="label">原価（円）</label>
+                                <input type="number" inputMode="numeric" value={itemCost}
+                                    onChange={(e) => setItemCost(e.target.value)} onFocus={(e) => e.target.select()} />
+                            </div>
+                            <div>
+                                <label className="label">資材費（円）</label>
+                                <input type="number" inputMode="numeric" value={packingCost}
+                                    onChange={(e) => setPackingCost(e.target.value)} onFocus={(e) => e.target.select()} />
+                            </div>
+                        </div>
+
+                        <label className="label">商品サイズ（縦 / 横 / 厚さ cm）</label>
+                        <div className="size-inputs">
+                            <input type="number" inputMode="decimal" placeholder="縦"
+                                value={dims.h} onChange={(e) => setDims({...dims, h: e.target.value})} />
+                            <input type="number" inputMode="decimal" placeholder="横"
+                                value={dims.w} onChange={(e) => setDims({...dims, w: e.target.value})} />
+                            <input type="number" inputMode="decimal" placeholder="厚さ"
+                                value={dims.t} onChange={(e) => setDims({...dims, t: e.target.value})} />
+                        </div>
+
+                        <label className="label">重さ（g）</label>
+                        <input type="number" inputMode="numeric" value={weight}
+                            onChange={(e) => setWeight(e.target.value)} onFocus={(e) => e.target.select()} />
                     </div>
 
+                    {/* ── 結果カード ── */}
                     <div className="card">
                         <div className="result-box">
-                            <div style={{fontSize: '0.8rem'}}>最終純利益</div>
-                            <div className="profit-val">¥{res.profit.toLocaleString()}</div>
-                            <div className="method-badge">{res.methodName}</div>
-                            {res.isApprox && <div className="approx-note">※送り先により送料が変わるため概算です</div>}
+                            <div style={{fontSize:'0.8rem', color:'#aaa'}}>最終純利益</div>
+                            <div className="profit-val" style={{color: res.profit < 0 ? '#e57373' : 'var(--main-pink)'}}>
+                                {res.profit < 0 ? '-' : ''}¥{Math.abs(res.profit).toLocaleString()}
+                            </div>
+                            {res.profit < 0 && (
+                                <div style={{fontSize:'0.75rem', color:'#e57373', marginTop:'4px'}}>
+                                    ⚠️ 赤字です。価格・原価を見直してください
+                                </div>
+                            )}
+                            {m.url ? (
+                                <a href={m.url} target="_blank" rel="noopener noreferrer" className="method-link">
+                                    {m.name} ➔
+                                </a>
+                            ) : (
+                                <div style={{marginTop:'10px', fontWeight:'bold', color:'var(--main-pink)'}}>
+                                    {m.name}
+                                </div>
+                            )}
                         </div>
+
+                        {/* 配送ガイド */}
                         <div className="spec-card">
                             <strong>📦 配送ガイド</strong><br/>
-                            {res.methodInfo}
+                            {m.info}
                         </div>
-                        {res.ifSuggestions.length > 0 && (
-                            <div className="if-card">
-                                <strong>💡 利益UPのヒント</strong>
-                                {res.ifSuggestions.map((text, i) => <div key={i} className="if-item">{text}</div>)}
+
+                        {/* 利益内訳 */}
+                        <div className="breakdown">
+                            <div className="bd-row income">
+                                <span>販売価格</span>
+                                <span>+¥{res.p.toLocaleString()}</span>
+                            </div>
+                            <div className="bd-row deduct">
+                                <span>販売手数料（{res.feeLabel}）</span>
+                                <span>-¥{res.feeCeil.toLocaleString()}</span>
+                            </div>
+
+                            {/* 送料・資材を分けて表示 */}
+                            <div className="bd-row deduct">
+                                <span>
+                                    送料
+                                    {m.estimate && <span className="estimate-badge">概算</span>}
+                                </span>
+                                <span>-¥{m.shipping.toLocaleString()}</span>
+                            </div>
+                            {m.material > 0 && (
+                                <div className="bd-row sub">
+                                    <span>└ 配送資材（{m.materialNote}）</span>
+                                    <span>-¥{m.material}</span>
+                                </div>
+                            )}
+
+                            {res.ic > 0 && (
+                                <div className="bd-row" style={{color:'#888', fontSize:'0.8rem', padding:'3px 0'}}>
+                                    <span>原価</span>
+                                    <span>-¥{res.ic.toLocaleString()}</span>
+                                </div>
+                            )}
+                            {res.pc > 0 && (
+                                <div className="bd-row" style={{color:'#888', fontSize:'0.8rem', padding:'3px 0'}}>
+                                    <span>梱包資材費</span>
+                                    <span>-¥{res.pc.toLocaleString()}</span>
+                                </div>
+                            )}
+                            <hr className="bd-divider" />
+                            <div className="bd-row total">
+                                <span>純利益</span>
+                                <span style={{color: res.profit < 0 ? '#e57373' : 'var(--main-pink)'}}>
+                                    {res.profit < 0 ? '-' : ''}¥{Math.abs(res.profit).toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* 他の候補一覧 */}
+                        {res.available.length > 1 && (
+                            <div className="compare-list">
+                                <div className="label">他の配送候補（安い順）</div>
+                                {res.available.slice(0, 5).map((c, i) => (
+                                    <div key={i} className={`compare-item ${i === 0 ? 'best' : 'other'}`}>
+                                        <span style={{flex:1}}>
+                                            {i === 0 ? '⭐ ' : ''}{c.name}
+                                            {c.estimate && <span className="estimate-badge">概算</span>}
+                                        </span>
+                                        <div className="compare-cost">
+                                            <div>¥{c.cost.toLocaleString()}</div>
+                                            {c.material > 0 && (
+                                                <div className="compare-cost-sub">
+                                                    送料¥{c.shipping}+{c.materialNote}¥{c.material}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
-                        <div className="detail-table">
-                            <div className="detail-row"><span>販売価格</span><span>¥{Number(price).toLocaleString()}</span></div>
-                            <div className="detail-row" style={{color: '#e57373'}}>
-                                <span>販売手数料 <span className="formula">{res.feeFormula}</span></span>
-                                <span>- ¥{res.fee.toLocaleString()}</span>
-                            </div>
-                            <div className="detail-row" style={{color: '#e57373'}}><span>配送料</span><span>- ¥{res.shipping.toLocaleString()}</span></div>
-                            <div className="detail-row" style={{color: '#888'}}><span>コスト計(仕入・資材)</span><span>- ¥{(Number(itemCost) + Number(packingCost)).toLocaleString()}</span></div>
-                        </div>
+
+                        <button className="copy-btn" onClick={copyResult}>📋 結果をコピー</button>
+                    </div>
+
+                    <div className="note">
+                        ※ 料金は2026年3月〜4月時点。最新情報は各サービス公式サイトでご確認ください。
                     </div>
                 </div>
             );
@@ -186,7 +540,5 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-    
-    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "211602fb15164c60acea4a97cc828044"}'></script>
-    </body>
+</body>
 </html>
