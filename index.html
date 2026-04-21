@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>📦 送料計算シミュレーター</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -11,7 +14,7 @@
         /* ── 元のUIをそのまま保持 ── */
         :root { --main-pink: #de9ba3; --sub-pink: #f2dee2; --accent-green: #4caf50; --accent-orange: #ff9800; --text-main: #5d4037; --bg-soft: #fdf8f8; }
         * { box-sizing: border-box; }
-        body { font-family: sans-serif; background: var(--bg-soft); color: var(--text-main); margin: 0; padding: 10px 10px 30px; }
+        body { font-family: 'Kosugi Maru', sans-serif; background: var(--bg-soft); color: var(--text-main); margin: 0; padding: 10px 10px 30px; }
         .container { max-width: 500px; margin: 0 auto; }
         .card { background: white; border-radius: 18px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid var(--sub-pink); margin-bottom: 12px; }
         .label { font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; display: block; }
@@ -39,7 +42,7 @@
         .approx-note { font-size: 0.65rem; color: #f44336; margin-top: 2px; }
         .size-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        h1 { font-size: 1.2rem; text-align: center; color: var(--main-pink); margin: 10px 0; }
+        h1 { font-size: 1.2rem; text-align: center; color: var(--main-pink); margin: 10px 0; font-family: 'Quicksand', 'Kosugi Maru', sans-serif; font-weight: 700; letter-spacing: 0.03em; }
 
         /* ── 追加スタイル ── */
         /* 価格スライダー */
@@ -451,7 +454,7 @@ function App() {
                 </div>
 
                 {/* サイト・手数料 */}
-                {(site==='メルカリ'||site==='メルカリショップス') ? (
+                {(site==='メルカリ'||site==='メルカリショップス'||site==='Yahoo!フリマ') ? (
                     <div>
                         <label className="label">販売サイト</label>
                         <select value={site} onChange={e=>{ setSite(e.target.value); setFeeRate(DEF_FEE[e.target.value]); }}>
